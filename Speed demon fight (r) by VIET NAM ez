@@ -1,0 +1,133 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+
+local Window = Rayfield:CreateWindow({
+   Name = "speed demon fight 🔥🇻🇳",
+   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "thank use hehe",
+   LoadingSubtitle = "by phong in vn",
+   ShowText = "Rayfield", -- for mobile users to unhide rayfield, change if you'd like
+   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+   ToggleUIKeybind = "K", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Big Hub"
+   },
+
+   Discord = {
+      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+
+   KeySystem = false, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
+      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+
+local mainTab = Window:CreateTab("đóng băng -- freeze", nil) -- Title, Image
+local Section = mainTab:CreateSection("Section Example")
+
+
+Rayfield:Notify({
+   Title = "hehehe",
+   Content = "that win",
+   Duration = 6.5,
+   Image = nil,
+})
+Rayfield:Notify({
+   Title = "hehehe",
+   Content = "that win",
+   Duration = 6.5,
+   Image = "ok!",
+})
+
+
+local Toggle = Tab:CreateToggle({
+   Name = "Toggle Example",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        --// FREEZE BOSS WITH TOGGLE
+--// Boss: Speed demon | The WHIGMASTER | AHAT MAN | WHIG BROTHERS
+
+getgenv().FreezeBoss = false
+
+local BossNames = {
+    ["Speed demon"] = true,
+    ["The WHIGMASTER"] = true,
+    ["AHAT MAN"] = true,
+    ["WHIG BROTHERS"] = true
+}
+
+-- Hàm đóng băng boss
+local function Freeze(model)
+    if model:FindFirstChild("Humanoid") then
+        local hum = model.Humanoid
+        hum.WalkSpeed = 0
+        hum.JumpPower = 0
+        hum.AutoRotate = false
+        hum.PlatformStand = true
+    end
+
+    for _,v in pairs(model:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Anchored = true
+            v.AssemblyLinearVelocity = Vector3.zero
+            v.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
+end
+
+-- Loop stun
+task.spawn(function()
+    while true do
+        if getgenv().FreezeBoss then
+            for _,obj in pairs(workspace:GetChildren()) do
+                if BossNames[obj.Name] then
+                    pcall(Freeze, obj)
+                end
+            end
+        end
+        task.wait(0.5)
+    end
+end)
+
+--// GUI TOGGLE
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local Button = Instance.new("TextButton", ScreenGui)
+
+Button.Size = UDim2.new(0,200,0,50)
+Button.Position = UDim2.new(0,20,0.5,-25)
+Button.Text = "FREEZE BOSS : OFF"
+Button.BackgroundColor3 = Color3.fromRGB(170,0,0)
+Button.TextScaled = true
+
+Button.MouseButton1Click:Connect(function()
+    getgenv().FreezeBoss = not getgenv().FreezeBoss
+
+    if getgenv().FreezeBoss then
+        Button.Text = "FREEZE BOSS : ON"
+        Button.BackgroundColor3 = Color3.fromRGB(0,170,0)
+    else
+        Button.Text = "FREEZE BOSS : OFF"
+        Button.BackgroundColor3 = Color3.fromRGB(170,0,0)
+    end
+end)
+
+   end,
+})
