@@ -62,23 +62,22 @@ local Toggle = mainTab:CreateToggle({
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Value)
-        -- =========================================
--- PERMA FREEZE + TRUE STUN BOSS (PvE)
--- =========================================
+        -- ======================================
+-- THE STUN + FREEZE (NPC / BOSS ONLY)
+-- ======================================
 
--- BOSS KEYWORDS
+-- BOSS KEYWORDS (tên NPC/Boss bạn tạo)
 local BossKeywords = {
     "ahat",
     "speed demon",
-    "whigmaster",
+    "the whigmaster",
     "whig brothers"
 }
 
 -- SERVICES
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
--- CHECK NAME
+-- CHECK BOSS NAME
 local function IsBossName(name)
     name = string.lower(name)
     for _, k in pairs(BossKeywords) do
@@ -89,24 +88,20 @@ local function IsBossName(name)
     return false
 end
 
--- APPLY FREEZE + TRUE STUN
-local function ApplyPermaLock(model)
+-- APPLY STUN + FREEZE
+local function ApplyStunFreeze(model)
     local hum = model:FindFirstChildOfClass("Humanoid")
     local hrp = model:FindFirstChild("HumanoidRootPart")
     if not hum or not hrp then return end
 
-    -- TRUE STUN (AI chết hẳn)
+    -- ⚡ TRUE STUN
     hum.WalkSpeed = 0
     hum.JumpPower = 0
     hum.AutoRotate = false
     hum.PlatformStand = true
     hum:ChangeState(Enum.HumanoidStateType.Physics)
 
-    -- FREEZE VẬT LÝ (không anchor)
-    hrp.AssemblyLinearVelocity = Vector3.zero
-    hrp.AssemblyAngularVelocity = Vector3.zero
-
-    -- Đảm bảo các part khác không rung
+    -- ❄️ FREEZE VẬT LÝ
     for _, p in pairs(model:GetDescendants()) do
         if p:IsA("BasePart") then
             p.AssemblyLinearVelocity = Vector3.zero
@@ -117,36 +112,34 @@ end
 
 -- FIND BOSSES
 local function GetBosses()
-    local list = {}
-    for _, m in pairs(workspace:GetDescendants()) do
+    local bosses = {}
+    for _, m in pairs(workspace:GetChildren()) do
         if m:IsA("Model")
         and IsBossName(m.Name)
-        and m:FindFirstChild("Humanoid")
-        and m:FindFirstChild("HumanoidRootPart")
-        and not Players:GetPlayerFromCharacter(m) then
-            table.insert(list, m)
+        and m:FindFirstChild("Humanoid") then
+            table.insert(bosses, m)
         end
     end
-    return list
+    return bosses
 end
 
 -- APPLY TO EXISTING BOSSES
 for _, boss in pairs(GetBosses()) do
-    ApplyPermaLock(boss)
+    ApplyStunFreeze(boss)
 end
 
 -- APPLY WHEN BOSS SPAWNS
-workspace.DescendantAdded:Connect(function(obj)
+workspace.ChildAdded:Connect(function(obj)
     if obj:IsA("Model") and IsBossName(obj.Name) then
-        task.wait(0.1) -- chờ load đầy đủ
-        ApplyPermaLock(obj)
+        task.wait(0.1)
+        ApplyStunFreeze(obj)
     end
 end)
 
--- ENFORCE VÔ HẠN (KHÔNG THOÁT)
+-- ENFORCE (AI KHÔNG THOÁT)
 RunService.Heartbeat:Connect(function()
     for _, boss in pairs(GetBosses()) do
-        ApplyPermaLock(boss)
+        ApplyStunFreeze(boss)
     end
 end)
 
