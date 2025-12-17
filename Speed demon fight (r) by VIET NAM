@@ -62,47 +62,388 @@ local Toggle = mainTab:CreateToggle({
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Value)
-        getgenv().FreezeBoss = false
-getgenv().Creator = 'https://discord.gg/B3HqPPzFYr - HalloweenGaster'
+        -- =========================================
+-- PERMA FREEZE + TRUE STUN BOSS (PvE)
+-- =========================================
 
--- Toggle bằng phím H
-local UIS = game:GetService("UserInputService")
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.H then
-        getgenv().FreezeBoss = not getgenv().FreezeBoss
-        warn("Freeze Boss:", getgenv().FreezeBoss)
+-- BOSS KEYWORDS
+local BossKeywords = {
+    "ahat",
+    "speed demon",
+    "whigmaster",
+    "whig brothers"
+}
+
+-- SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+-- CHECK NAME
+local function IsBossName(name)
+    name = string.lower(name)
+    for _, k in pairs(BossKeywords) do
+        if string.find(name, k) then
+            return true
+        end
+    end
+    return false
+end
+
+-- APPLY FREEZE + TRUE STUN
+local function ApplyPermaLock(model)
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    local hrp = model:FindFirstChild("HumanoidRootPart")
+    if not hum or not hrp then return end
+
+    -- TRUE STUN (AI chết hẳn)
+    hum.WalkSpeed = 0
+    hum.JumpPower = 0
+    hum.AutoRotate = false
+    hum.PlatformStand = true
+    hum:ChangeState(Enum.HumanoidStateType.Physics)
+
+    -- FREEZE VẬT LÝ (không anchor)
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+
+    -- Đảm bảo các part khác không rung
+    for _, p in pairs(model:GetDescendants()) do
+        if p:IsA("BasePart") then
+            p.AssemblyLinearVelocity = Vector3.zero
+            p.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
+end
+
+-- FIND BOSSES
+local function GetBosses()
+    local list = {}
+    for _, m in pairs(workspace:GetDescendants()) do
+        if m:IsA("Model")
+        and IsBossName(m.Name)
+        and m:FindFirstChild("Humanoid")
+        and m:FindFirstChild("HumanoidRootPart")
+        and not Players:GetPlayerFromCharacter(m) then
+            table.insert(list, m)
+        end
+    end
+    return list
+end
+
+-- APPLY TO EXISTING BOSSES
+for _, boss in pairs(GetBosses()) do
+    ApplyPermaLock(boss)
+end
+
+-- APPLY WHEN BOSS SPAWNS
+workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("Model") and IsBossName(obj.Name) then
+        task.wait(0.1) -- chờ load đầy đủ
+        ApplyPermaLock(obj)
     end
 end)
 
-while true do
-    task.wait(0.4)
+-- ENFORCE VÔ HẠN (KHÔNG THOÁT)
+RunService.Heartbeat:Connect(function()
+    for _, boss in pairs(GetBosses()) do
+        ApplyPermaLock(boss)
+    end
+end)
 
-    if getgenv().FreezeBoss then
-        sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
-        sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", math.huge)
+   end,
+})
 
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("Humanoid") and v.Parent then
-                local name = v.Parent.Name:lower()
 
-                -- Nhận diện BOSS
-                if string.find(name, "boss") or string.find(name, "speed") then
-                    local hrp = v.Parent:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        hrp.Anchored = true
-                        hrp.Velocity = Vector3.zero
-                        hrp.RotVelocity = Vector3.zero
-                    end
+local Toggle = mainTab:CreateToggle({
+   Name = "aimbot",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        -- =====================================
+-- FINAL EXTREME BOSS LOCK (PvE - HỢP LỆ)
+-- =====================================
 
-                    v.WalkSpeed = 0
-                    v.JumpPower = 0
-                    v.AutoRotate = false
+-- BOSS KEYWORDS
+local BossKeywords = {
+    "ahat",
+    "speed demon",
+    "whigmaster",
+    "whig brothers"
+}
+
+-- SETTINGS
+local S = {
+    Enabled = false,
+    ToggleKey = Enum.KeyCode.Q,
+
+    -- CAMERA SMOOTH (dynamic)
+    SmoothNear = 0.14,   -- gần
+    SmoothFar  = 0.08,   -- xa (mượt hơn)
+
+    -- PREDICTION
+    BasePrediction = 0.06,
+    MaxPrediction  = 0.38,
+
+    -- AIMPART SWITCH (speed)
+    SpeedHead  = 22,
+    SpeedTorso = 48,
+
+    -- LONG RANGE
+    MaxDistance = 9000,
+    FarDistance = 2000,
+
+    -- PRIORITY (boss nguy hiểm)
+    PrioritySpeed = 2.2,
+    PriorityDist  = 0.7
+}
+
+-- SERVICES
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LP = Players.LocalPlayer
+
+-- TOGGLE
+UIS.InputBegan:Connect(function(i,gp)
+    if gp then return end
+    if i.KeyCode == S.ToggleKey then
+        S.Enabled = not S.Enabled
+        warn("FINAL EXTREME LOCK:", S.Enabled and "ON" or "OFF")
+    end
+end)
+
+-- UTIL
+local function IsBossName(name)
+    name = string.lower(name)
+    for _, k in pairs(BossKeywords) do
+        if string.find(name, k) then return true end
+    end
+    return false
+end
+
+-- PICK BEST BOSS (xa vẫn ưu tiên nếu nguy hiểm)
+local function GetBestBoss()
+    local best, bestScore
+    local camPos = Camera.CFrame.Position
+
+    for _, m in pairs(workspace:GetDescendants()) do
+        if m:IsA("Model")
+        and IsBossName(m.Name)
+        and m:FindFirstChild("Humanoid")
+        and m.Humanoid.Health > 0
+        and m:FindFirstChild("HumanoidRootPart")
+        and not Players:GetPlayerFromCharacter(m) then
+
+            local hrp = m.HumanoidRootPart
+            local dist = (hrp.Position - camPos).Magnitude
+            if dist <= S.MaxDistance then
+                local speed = hrp.AssemblyLinearVelocity.Magnitude
+                local score = speed * S.PrioritySpeed - dist * S.PriorityDist
+                if not bestScore or score > bestScore then
+                    bestScore = score
+                    best = m
                 end
             end
         end
     end
+    return best
 end
+
+-- MAIN LOOP
+RunService.RenderStepped:Connect(function()
+    if not S.Enabled then return end
+
+    local boss = GetBestBoss()
+    if not boss then return end
+
+    local hrp = boss.HumanoidRootPart
+    local head = boss:FindFirstChild("Head")
+    local torso = boss:FindFirstChild("UpperTorso") or boss:FindFirstChild("Torso")
+    if not head then return end
+
+    local camPos = Camera.CFrame.Position
+    local dist = (hrp.Position - camPos).Magnitude
+    if dist > S.MaxDistance then return end
+
+    local speed = hrp.AssemblyLinearVelocity.Magnitude
+
+    -- AUTO AIM PART
+    local aimPart
+    if speed > S.SpeedTorso then
+        aimPart = hrp
+    elseif speed > S.SpeedHead and torso then
+        aimPart = torso
+    else
+        aimPart = head
+    end
+
+    -- DISTANCE + SPEED PREDICTION
+    local distFactor = math.clamp(dist / S.MaxDistance, 0, 1)
+    local prediction = math.clamp(
+        S.BasePrediction + (speed / 420) + (distFactor * 0.12),
+        S.BasePrediction,
+        S.MaxPrediction
+    )
+
+    -- DYNAMIC SMOOTH
+    local smooth = (dist > S.FarDistance) and S.SmoothFar or S.SmoothNear
+
+    local aimPos = aimPart.Position + (hrp.AssemblyLinearVelocity * prediction)
+    Camera.CFrame = Camera.CFrame:Lerp(
+        CFrame.new(camPos, aimPos),
+        smooth
+    )
+end)
+
+   end,
+})
+
+
+local Slider = mainTab:CreateSlider({
+   Name = "aimbot tầm xa",
+   Range = {0, 9000},
+   Increment = 10,
+   Suffix = "tầm xa",
+   CurrentValue = 10,
+   Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        -- =====================================
+-- FINAL EXTREME BOSS LOCK (PvE - HỢP LỆ)
+-- =====================================
+
+-- BOSS KEYWORDS
+local BossKeywords = {
+    "ahat",
+    "speed demon",
+    "whigmaster",
+    "whig brothers"
+}
+
+-- SETTINGS
+local S = {
+    Enabled = false,
+    ToggleKey = Enum.KeyCode.Q,
+
+    -- CAMERA SMOOTH (dynamic)
+    SmoothNear = 0.14,   -- gần
+    SmoothFar  = 0.08,   -- xa (mượt hơn)
+
+    -- PREDICTION
+    BasePrediction = 0.06,
+    MaxPrediction  = 0.38,
+
+    -- AIMPART SWITCH (speed)
+    SpeedHead  = 22,
+    SpeedTorso = 48,
+
+    -- LONG RANGE
+    MaxDistance = 9000,
+    FarDistance = 2000,
+
+    -- PRIORITY (boss nguy hiểm)
+    PrioritySpeed = 2.2,
+    PriorityDist  = 0.7
+}
+
+-- SERVICES
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LP = Players.LocalPlayer
+
+-- TOGGLE
+UIS.InputBegan:Connect(function(i,gp)
+    if gp then return end
+    if i.KeyCode == S.ToggleKey then
+        S.Enabled = not S.Enabled
+        warn("FINAL EXTREME LOCK:", S.Enabled and "ON" or "OFF")
+    end
+end)
+
+-- UTIL
+local function IsBossName(name)
+    name = string.lower(name)
+    for _, k in pairs(BossKeywords) do
+        if string.find(name, k) then return true end
+    end
+    return false
+end
+
+-- PICK BEST BOSS (xa vẫn ưu tiên nếu nguy hiểm)
+local function GetBestBoss()
+    local best, bestScore
+    local camPos = Camera.CFrame.Position
+
+    for _, m in pairs(workspace:GetDescendants()) do
+        if m:IsA("Model")
+        and IsBossName(m.Name)
+        and m:FindFirstChild("Humanoid")
+        and m.Humanoid.Health > 0
+        and m:FindFirstChild("HumanoidRootPart")
+        and not Players:GetPlayerFromCharacter(m) then
+
+            local hrp = m.HumanoidRootPart
+            local dist = (hrp.Position - camPos).Magnitude
+            if dist <= S.MaxDistance then
+                local speed = hrp.AssemblyLinearVelocity.Magnitude
+                local score = speed * S.PrioritySpeed - dist * S.PriorityDist
+                if not bestScore or score > bestScore then
+                    bestScore = score
+                    best = m
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- MAIN LOOP
+RunService.RenderStepped:Connect(function()
+    if not S.Enabled then return end
+
+    local boss = GetBestBoss()
+    if not boss then return end
+
+    local hrp = boss.HumanoidRootPart
+    local head = boss:FindFirstChild("Head")
+    local torso = boss:FindFirstChild("UpperTorso") or boss:FindFirstChild("Torso")
+    if not head then return end
+
+    local camPos = Camera.CFrame.Position
+    local dist = (hrp.Position - camPos).Magnitude
+    if dist > S.MaxDistance then return end
+
+    local speed = hrp.AssemblyLinearVelocity.Magnitude
+
+    -- AUTO AIM PART
+    local aimPart
+    if speed > S.SpeedTorso then
+        aimPart = hrp
+    elseif speed > S.SpeedHead and torso then
+        aimPart = torso
+    else
+        aimPart = head
+    end
+
+    -- DISTANCE + SPEED PREDICTION
+    local distFactor = math.clamp(dist / S.MaxDistance, 0, 1)
+    local prediction = math.clamp(
+        S.BasePrediction + (speed / 420) + (distFactor * 0.12),
+        S.BasePrediction,
+        S.MaxPrediction
+    )
+
+    -- DYNAMIC SMOOTH
+    local smooth = (dist > S.FarDistance) and S.SmoothFar or S.SmoothNear
+
+    local aimPos = aimPart.Position + (hrp.AssemblyLinearVelocity * prediction)
+    Camera.CFrame = Camera.CFrame:Lerp(
+        CFrame.new(camPos, aimPos),
+        smooth
+    )
+end)
 
    end,
 })
