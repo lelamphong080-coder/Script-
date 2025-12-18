@@ -58,76 +58,104 @@ Rayfield:Notify({
 
 
 local Toggle = mainTab:CreateToggle({
-   Name = "Toggle Example",
+   Name = "auto kill",
    CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Flag = "toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Value)
-        --// FREEZE BOSS WITH TOGGLE
---// Boss: Speed demon | The WHIGMASTER | AHAT MAN | WHIG BROTHERS
+       -- GAME: Speed Demon Boss Fight (R)
+-- BOSS ONLY - INFINITE DAMAGE / INFINITE RANGE
+-- STABLE VERSION (NO SYNTAX ERROR)
 
-getgenv().FreezeBoss = false
+getgenv().BOSS_KILL = false
 
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+-- ===== BOSS NAME LIST =====
 local BossNames = {
     ["Speed demon"] = true,
-    ["The WHIGMASTER"] = true,
+    ["THE WHIGMASTER"] = true,
     ["AHAT MAN"] = true,
     ["WHIG BROTHERS"] = true
 }
 
--- Hàm đóng băng boss
-local function Freeze(model)
-    if model:FindFirstChild("Humanoid") then
-        local hum = model.Humanoid
-        hum.WalkSpeed = 0
-        hum.JumpPower = 0
-        hum.AutoRotate = false
-        hum.PlatformStand = true
-    end
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "BossKillGUI"
+gui.Parent = game.CoreGui
 
-    for _,v in pairs(model:GetDescendants()) do
-        if v:IsA("BasePart") then
-            v.Anchored = true
-            v.AssemblyLinearVelocity = Vector3.zero
-            v.AssemblyAngularVelocity = Vector3.zero
-        end
+local btn = Instance.new("TextButton")
+btn.Parent = gui
+btn.Size = UDim2.new(0,260,0,45)
+btn.Position = UDim2.new(0.05,0,0.4,0)
+btn.Text = "BOSS KILL : OFF"
+btn.TextScaled = true
+btn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+btn.TextColor3 = Color3.fromRGB(255,70,70)
+btn.BorderSizePixel = 0
+btn.Active = true
+btn.Draggable = true
+
+btn.MouseButton1Click:Connect(function()
+    getgenv().BOSS_KILL = not getgenv().BOSS_KILL
+    if getgenv().BOSS_KILL then
+        btn.Text = "BOSS KILL : ON"
+    else
+        btn.Text = "BOSS KILL : OFF"
+    end
+end)
+
+-- Panic key (P)
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.P then
+        getgenv().BOSS_KILL = false
+        btn.Text = "BOSS KILL : OFF"
+        warn("[PANIC] BOSS KILL STOPPED")
+    end
+end)
+
+-- ===== CORE =====
+local function isBoss(model)
+    if not model then return false end
+    if not model:IsA("Model") then return false end
+    if not BossNames[model.Name] then return false end
+    if Players:GetPlayerFromCharacter(model) then return false end
+    return model:FindFirstChildOfClass("Humanoid")
+end
+
+local function killBoss(model)
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if hum and hum.Health > 0 then
+        hum:TakeDamage(math.huge) -- infinite damage
     end
 end
 
--- Loop stun
+-- ===== MAIN LOOP (FPS SAFE) =====
 task.spawn(function()
     while true do
-        if getgenv().FreezeBoss then
-            for _,obj in pairs(workspace:GetChildren()) do
-                if BossNames[obj.Name] then
-                    pcall(Freeze, obj)
+        task.wait(0.3)
+
+        if getgenv().BOSS_KILL then
+            local children = workspace:GetChildren()
+            for i = 1, #children do
+                local m = children[i]
+                if isBoss(m) then
+                    killBoss(m)
                 end
             end
         end
-        task.wait(0.5)
     end
 end)
 
---// GUI TOGGLE
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local Button = Instance.new("TextButton", ScreenGui)
-
-Button.Size = UDim2.new(0,200,0,50)
-Button.Position = UDim2.new(0,20,0.5,-25)
-Button.Text = "FREEZE BOSS : OFF"
-Button.BackgroundColor3 = Color3.fromRGB(170,0,0)
-Button.TextScaled = true
-
-Button.MouseButton1Click:Connect(function()
-    getgenv().FreezeBoss = not getgenv().FreezeBoss
-
-    if getgenv().FreezeBoss then
-        Button.Text = "FREEZE BOSS : ON"
-        Button.BackgroundColor3 = Color3.fromRGB(0,170,0)
-    else
-        Button.Text = "FREEZE BOSS : OFF"
-        Button.BackgroundColor3 = Color3.fromRGB(170,0,0)
+-- ===== AUTO KILL ON SPAWN =====
+workspace.ChildAdded:Connect(function(model)
+    if not getgenv().BOSS_KILL then return end
+    if isBoss(model) then
+        task.wait(0.05)
+        killBoss(model)
     end
 end)
 
-   end,
+        end
 })
