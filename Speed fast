@@ -1,0 +1,171 @@
+local Window = Rayfield:CreateWindow({
+   Name = "...",
+   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "...",
+   LoadingSubtitle = "by phong",
+   ShowText = "Rayfield", -- for mobile users to unhide rayfield, change if you'd like
+   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+   ToggleUIKeybind = "K", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Big Hub"
+   },
+
+   Discord = {
+      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+
+   KeySystem = false, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
+      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+
+
+local speedTab = Window:CreateTab("speed", nil) -- Title, Image
+local Section = speedTab:CreateSection("up speed")
+
+
+Rayfield:Notify({
+   Title = "nah",
+   Content = "nah",
+   Duration = 6.5,
+   Image = 4483362458,
+})
+
+
+local Slider = Tab:CreateSlider({
+   Name = "speed",
+   Range = {0, 100},
+   Increment = 10,
+   Suffix = "speed",
+   CurrentValue = 10,
+   Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        -- SPEED SLIDER UI (MAX 2000)
+-- Toggle + Slider | Stable
+
+getgenv().SpeedOn = false
+getgenv().SpeedValue = 16
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local lp = Players.LocalPlayer
+
+-- Toggle bằng phím M
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.M then
+        getgenv().SpeedOn = not getgenv().SpeedOn
+        if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+            lp.Character.Humanoid.WalkSpeed = getgenv().SpeedOn and getgenv().SpeedValue or 16
+        end
+    end
+end)
+
+-- Giữ speed liên tục
+task.spawn(function()
+    while task.wait(0.1) do
+        if getgenv().SpeedOn then
+            if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+                lp.Character.Humanoid.WalkSpeed = getgenv().SpeedValue
+            end
+        end
+    end
+end)
+
+-- Giữ khi respawn
+lp.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid")
+    task.wait(0.2)
+    if getgenv().SpeedOn then
+        char.Humanoid.WalkSpeed = getgenv().SpeedValue
+    end
+end)
+
+-- ===== UI SLIDER =====
+local gui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+gui.Name = "SpeedSliderUI"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 260, 0, 120)
+frame.Position = UDim2.new(0.05, 0, 0.35, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "SPEED SLIDER (MAX 2000)"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+
+local valueLabel = Instance.new("TextLabel", frame)
+valueLabel.Position = UDim2.new(0,0,0,35)
+valueLabel.Size = UDim2.new(1,0,0,25)
+valueLabel.Text = "Speed: 16"
+valueLabel.TextColor3 = Color3.new(1,1,1)
+valueLabel.BackgroundTransparency = 1
+
+local sliderBar = Instance.new("Frame", frame)
+sliderBar.Position = UDim2.new(0.1,0,0,70)
+sliderBar.Size = UDim2.new(0.8,0,0,10)
+sliderBar.BackgroundColor3 = Color3.fromRGB(70,70,70)
+
+local fill = Instance.new("Frame", sliderBar)
+fill.Size = UDim2.new(0,0,1,0)
+fill.BackgroundColor3 = Color3.fromRGB(0,170,255)
+
+local dragging = false
+local MAX_SPEED = 2000
+
+sliderBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local x = math.clamp(
+            (input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X,
+            0, 1
+        )
+        fill.Size = UDim2.new(x,0,1,0)
+
+        local speed = math.floor(x * MAX_SPEED)
+        if speed < 1 then speed = 1 end
+
+        getgenv().SpeedValue = speed
+        valueLabel.Text = "Speed: "..speed
+
+        if getgenv().SpeedOn and lp.Character and lp.Character:FindFirstChild("Humanoid") then
+            lp.Character.Humanoid.WalkSpeed = speed
+        end
+    end
+end)
+
+   end,
+})
